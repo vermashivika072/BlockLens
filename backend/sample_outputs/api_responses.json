@@ -1,0 +1,46 @@
+{
+  "upload_certificate": {
+    "certificate_id": "3f4c87f7dc77497a95d49a28f5a7a84f",
+    "blockchain_hash": "2769d0a41f1095eb7a0c0ff818b9f063e6c1ef17afbf1c5e5df3d7da6584b2c2",
+    "qr_code_url": "/storage/qrcodes/3f4c87f7dc77497a95d49a28f5a7a84f.png",
+    "verification_status": "real",
+    "authenticity_score": 0.884,
+    "fraud_probability": 0.116
+  },
+  "verify_certificate": {
+    "certificate_id": "3f4c87f7dc77497a95d49a28f5a7a84f",
+    "name": "Aarav Mehta",
+    "issuer": "Stanford University",
+    "issue_date": "2026-03-12",
+    "expiry_date": "2029-03-12",
+    "verification_status": "real",
+    "authenticity_score": 0.884,
+    "fraud_probability": 0.116,
+    "blockchain_hash": "2769d0a41f1095eb7a0c0ff818b9f063e6c1ef17afbf1c5e5df3d7da6584b2c2",
+    "blockchain_valid": true,
+    "qr_code_url": "/storage/qrcodes/3f4c87f7dc77497a95d49a28f5a7a84f.png",
+    "qr_safety": {
+      "url": "http://localhost:8000/verify/3f4c87f7dc77497a95d49a28f5a7a84f",
+      "hostname": "localhost",
+      "is_safe": true,
+      "risk_score": 0.15,
+      "reasons": []
+    },
+    "zkp_proof": {
+      "proof": "c958a0c9bc2df2ea82d7a2db6fcfa0c70a7cc0f9d5dbf68248ff5a99ddba467e",
+      "proof_type": "simulated-zkp",
+      "verifiable_claim": "certificate_exists_without_full_disclosure",
+      "revealed_fields": {
+        "certificate_id": "3f4c87f7dc77497a95d49a28f5a7a84f",
+        "issuer": "Stanford University",
+        "issue_date": "2026-03-12"
+      }
+    },
+    "original_image_url": "/storage/uploads/3f4c87f7dc77497a95d49a28f5a7a84f.png",
+    "ela_heatmap_url": "/storage/heatmaps/3f4c87f7dc77497a95d49a28f5a7a84f_heatmap.png",
+    "extracted_text": "Certificate of Achievement ...",
+    "analysis_summary": [
+      "The certificate aligns with trusted issuer, OCR, and integrity checks."
+    ]
+  }
+}
