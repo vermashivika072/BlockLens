@@ -12,28 +12,34 @@ async def get_context(db, query: str) -> str:
     query_lower = query.lower()
 
     # 1. Search for specific certificates mentioned by name
-    # We look for whitelisted names or fragments
-    search_terms = ["shivika", "john", "bashir", "samuel", "saumya", "doe", "smith"]
-    mentioned_name = next((term for term in search_terms if term in query_lower), None)
-
-    if mentioned_name:
-        cert = await db[CERTIFICATES_COLLECTION].find_one({"name": {"$regex": mentioned_name, "$options": "i"}})
+    # We split the query into words and search for any word that might be a name
+    potential_names = [word.strip(",.?!") for word in query_lower.split() if len(word) > 2]
+    cert = None
+    for name_part in potential_names:
+        # Avoid common non-name words
+        if name_part in ["the", "this", "that", "what", "how", "verify", "score", "scan", "last", "can", "you", "tell", "about", "status", "certificate", "name"]:
+            continue
+            
+        cert = await db[CERTIFICATES_COLLECTION].find_one({"name": {"$regex": name_part, "$options": "i"}})
         if cert:
-            cid = cert["certificate_id"]
-            analysis = await db[ANALYSIS_RESULTS_COLLECTION].find_one({"certificate_id": cid})
-            
-            status = cert["verification_status"].upper()
-            score = round(cert["authenticity_score"] * 100, 1)
-            
-            summary = ""
-            if analysis and "auditor" in analysis:
-                summary = " ".join(analysis["auditor"].get("explanation", []))
-            
-            context_parts.append(
-                f"FOUND CERTIFICATE INFO: Name: {cert['name']}, Issuer: {cert['issuer']}, "
-                f"Status: {status}, Authenticity Score: {score}%, "
-                f"Forensic Summary: {summary}"
-            )
+            break
+
+    if cert:
+        cid = cert["certificate_id"]
+        analysis = await db[ANALYSIS_RESULTS_COLLECTION].find_one({"certificate_id": cid})
+        
+        status = cert["verification_status"].upper()
+        score = round(cert["authenticity_score"] * 100, 1)
+        
+        summary = ""
+        if analysis and "auditor" in analysis:
+            summary = " ".join(analysis["auditor"].get("explanation", []))
+        
+        context_parts.append(
+            f"FOUND CERTIFICATE INFO: Name: {cert['name']}, Issuer: {cert['issuer']}, "
+            f"Status: {status}, Authenticity Score: {score}%, "
+            f"Forensic Summary: {summary}"
+        )
 
     # 2. Search General Knowledge Base
     # We match keywords for technical explanations
@@ -57,7 +63,7 @@ async def get_context(db, query: str) -> str:
 
     # 3. Fetch Most Recent Scan Result (Personalization)
     # If the user is asking about "my scan" or "the result" or just generally, show the latest scan
-    if not mentioned_name or any(kw in query_lower for kw in ["my", "scan", "result", "last", "latest"]):
+    if not cert or any(kw in query_lower for kw in ["my", "scan", "result", "last", "latest"]):
         latest_cert = await db[CERTIFICATES_COLLECTION].find().sort("created_at", -1).limit(1).to_list(length=1)
         if latest_cert:
             cert = latest_cert[0]

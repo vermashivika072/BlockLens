@@ -72,6 +72,15 @@ export async function fetchStats() {
   }>("/stats");
 }
 
+export async function fetchAnalytics() {
+  return await apiRequest<{
+    month: string;
+    original: number;
+    fake: number;
+    total: number;
+  }[]>("/analytics");
+}
+
 export type FeedbackEntry = {
   id: string;
   user_email: string;

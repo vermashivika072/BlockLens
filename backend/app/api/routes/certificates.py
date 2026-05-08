@@ -190,6 +190,50 @@ async def get_dashboard_stats(request: Request, db=Depends(get_database), _user=
     }
 
 
+@router.get("/analytics")
+@limiter.limit("60/minute")
+async def get_analytics(request: Request, db=Depends(get_database), _user=Depends(get_current_user)):
+    """
+    Groups certificates by month for the analytics dashboard.
+    """
+    pipeline = [
+        {
+            "$group": {
+                "_id": { "$month": "$created_at" },
+                "total": { "$sum": 1 },
+                "verified": { "$sum": { "$cond": [{ "$eq": ["$verification_status", "real"] }, 1, 0] } },
+                "fake": { "$sum": { "$cond": [{ "$eq": ["$verification_status", "fake"] }, 1, 0] } }
+            }
+        },
+        { "$sort": { "_id": 1 } }
+    ]
+    
+    results = await db[CERTIFICATES_COLLECTION].aggregate(pipeline).to_list(length=12)
+    
+    MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    analytics_data = []
+    
+    # Fill in all 12 months, even if they have no data
+    for i in range(1, 13):
+        found = next((r for r in results if r["_id"] == i), None)
+        if found:
+            analytics_data.append({
+                "month": MONTHS[i-1],
+                "original": found["verified"],
+                "fake": found["fake"],
+                "total": found["total"]
+            })
+        else:
+            analytics_data.append({
+                "month": MONTHS[i-1],
+                "original": 0,
+                "fake": 0,
+                "total": 0
+            })
+            
+    return analytics_data
+
+
 @router.get("/report/{certificate_id}")
 @limiter.limit("20/minute")
 async def download_report(request: Request, certificate_id: str, db=Depends(get_database)):

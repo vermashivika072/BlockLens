@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Layout } from "@/components/certichain/Layout";
 import { BatchScanner } from "@/components/certichain/BatchScanner";
-import { isAuthenticated, fetchCertificates, fetchStats, fetchFeedback, FeedbackEntry } from "@/lib/auth";
+import { isAuthenticated, fetchCertificates, fetchStats, fetchFeedback, fetchAnalytics, FeedbackEntry } from "@/lib/auth";
 
 const TABS = [
   { id: "upload", label: "Bulk Upload", icon: UploadCloud },
@@ -57,6 +57,7 @@ export default function Dashboard() {
     verified_batch: 0,
     failed_suspect: 0
   });
+  const [analyticsData, setAnalyticsData] = useState<any[]>(ANALYTICS_DATA);
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
@@ -92,11 +93,14 @@ export default function Dashboard() {
 
         // Fetch feedback (new feature)
         try {
-          const feedbackData = await fetchFeedback();
+          const [feedbackData, analyticsResults] = await Promise.all([
+            fetchFeedback().catch(() => []),
+            fetchAnalytics().catch(() => ANALYTICS_DATA)
+          ]);
           setFeedback(feedbackData);
+          setAnalyticsData(analyticsResults);
         } catch (err) {
-          console.warn("Feedback fetch failed (skipping):", err);
-          setFeedback([]); // Fallback to empty
+          console.warn("Extended data fetch failed:", err);
         }
 
       } catch (err) {
@@ -245,8 +249,8 @@ export default function Dashboard() {
                           {[0, 1, 2, 3, 4].map(i => <div key={i} className="w-full border-t border-white" />)}
                         </div>
 
-                        {ANALYTICS_DATA.map((d, i) => {
-                          const maxVal = Math.max(...ANALYTICS_DATA.map(x => x.total));
+                        {analyticsData.map((d, i) => {
+                          const maxVal = Math.max(...analyticsData.map(x => x.total), 1);
                           const height = (d.total / maxVal) * 100;
                           
                           return (
@@ -258,11 +262,11 @@ export default function Dashboard() {
                             >
                               <motion.div
                                 initial={{ height: 0 }}
-                                animate={{ height: `${height}%` }}
+                                animate={{ height: `${Math.max(height, 2)}%` }}
                                 className={`w-full rounded-t-lg transition-all duration-300 ${
                                   hoveredBar === i 
-                                    ? "bg-gradient-to-t from-[oklch(0.7_0.22_260)] to-[oklch(0.78_0.18_200)] shadow-[0_0_20px_rgba(var(--brand-primary),0.3)]" 
-                                    : "bg-white/10"
+                                    ? "bg-gradient-to-t from-[oklch(0.7_0.22_260)] to-[oklch(0.78_0.18_200)] shadow-[0_0_20px_oklch(0.7_0.22_260/0.4)]" 
+                                    : "bg-white/20"
                                 }`}
                               />
                               <p className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-muted-foreground uppercase">{d.month}</p>

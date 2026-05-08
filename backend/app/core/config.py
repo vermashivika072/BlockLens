@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     app_version: str = Field(default="1.0.0", validation_alias="APP_VERSION")
     debug: bool = Field(default=False, validation_alias="DEBUG")
     gemini_api_key: str = Field(default="", validation_alias="GEMINI_API_KEY")
+    groq_api_key: str = Field(default="", validation_alias="GROQ_API_KEY")
+    openai_api_key: str = Field(default="", validation_alias="OPENAI_API_KEY")
     frontend_url: str = Field(default="http://localhost:3000", validation_alias="FRONTEND_URL")
 
     mongodb_uri: str = Field(default="mongodb://localhost:27017", validation_alias="MONGODB_URI")

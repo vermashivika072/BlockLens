@@ -1,5 +1,7 @@
 import google.generativeai as genai
 from app.core.config import get_settings
+import httpx
+import asyncio
 
 def audit_certificate(
     *,
@@ -84,7 +86,7 @@ def audit_certificate(
         try:
             genai.configure(api_key=settings.gemini_api_key)
             # Use the currently supported gemini-1.5-flash model instead of gemini-3-flash
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.0-flash-lite")
             
             prompt = f"""
             You are a professional digital forensics AI auditor for CertiChain Aura.
@@ -104,7 +106,34 @@ def audit_certificate(
             if response.text:
                 final_explanation = response.text.strip().replace("\n", " ")
         except Exception as e:
-            print(f"DEBUG: Gemini AI Summary Generation Failed: {e}. Falling back to rule-based summary.")
+            print(f"DEBUG: Gemini AI Summary Generation Failed: {e}. Trying Groq...")
+            
+    # Fallback to Groq if Gemini failed or is missing
+    if (not final_explanation or final_explanation == " ".join(explanation)) and settings.groq_api_key:
+        try:
+            # We use a synchronous-like call or just wrap it
+            # Since this function is synchronous, we need to run the async call in a loop
+            async def get_groq_summary():
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+                        json={
+                            "model": "llama-3.3-70b-versatile",
+                            "messages": [
+                                {"role": "system", "content": "You are a professional digital forensics AI auditor."},
+                                {"role": "user", "content": f"Generate a concise 3-4 sentence forensic summary from these findings: {final_explanation}"}
+                            ],
+                            "temperature": 0.5
+                        }
+                    )
+                    return resp.json()["choices"][0]["message"]["content"]
+            
+            groq_resp = asyncio.run(get_groq_summary())
+            if groq_resp:
+                final_explanation = groq_resp.strip().replace("\n", " ")
+        except Exception as groq_err:
+            print(f"DEBUG: Groq AI Summary Generation Failed: {groq_err}. Using rule-based summary.")
 
     return {
         "authenticity_score": round(authenticity, 3),

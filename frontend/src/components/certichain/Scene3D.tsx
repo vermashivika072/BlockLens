@@ -1,11 +1,13 @@
+"use client";
+
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { Float, MeshDistortMaterial, Sphere, Torus, Environment } from "@react-three/drei";
-import { useRef, Suspense } from "react";
+import { Float, MeshDistortMaterial, Sphere, Torus, Environment, useTexture } from "@react-three/drei";
+import { useRef, Suspense, useState, useEffect } from "react";
 import * as THREE from "three";
 
 function Certificate() {
   const ref = useRef<THREE.Mesh>(null);
-  const texture = useLoader(THREE.TextureLoader, "/certificate.png");
+  const texture = useTexture("/certificate.png");
   
   useFrame((state) => {
     if (!ref.current) return;
@@ -40,6 +42,16 @@ function Orb({ position, color }: { position: [number, number, number]; color: s
 }
 
 export function Scene3D() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="w-full h-full bg-transparent" />;
+  }
+
   return (
     <Canvas camera={{ position: [0, 0, 5], fov: 45 }} dpr={[1, 2]}>
       <Suspense fallback={null}>
